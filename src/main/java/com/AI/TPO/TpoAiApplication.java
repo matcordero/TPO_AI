@@ -25,7 +25,7 @@ public class TpoAiApplication {
 
 	public static void main(String[] args) {
 		SpringApplication.run(TpoAiApplication.class, args);
-	}
+	} 
 	/*
 	@Bean
 	CommandLineRunner CrearPersonas(PersonaRepositorio personaRepositorio) {

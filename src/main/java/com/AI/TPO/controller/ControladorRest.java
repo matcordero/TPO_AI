@@ -17,6 +17,7 @@ import java.util.stream.StreamSupport;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -55,6 +56,7 @@ import com.AI.TPO.views.ReclamoView;
 import com.AI.TPO.views.TipoPermiso;
 import com.AI.TPO.views.UnidadView;
 
+@CrossOrigin
 @RestController
 @RequestMapping("/TPOAPI/Controller")
 public class ControladorRest {
@@ -444,6 +446,16 @@ public class ControladorRest {
 			return ResponseEntity.ok(oPersona);
 		}
 		return ResponseEntity.notFound().build();
+	}
+	
+	@CrossOrigin
+	@PostMapping(value = "/Login")
+	public ResponseEntity<?> login(@RequestParam("usuarioEmpleado") String usuarioEmpleado,@RequestParam("contraseñaEmpleado") String contraseñaEmpleado){
+		Optional<Usuario> oUsuario = usuarioService.findById(usuarioEmpleado);
+		if(oUsuario.isPresent() && oUsuario.get().getContraseña().equals(contraseñaEmpleado)) {
+			return ResponseEntity.status(HttpStatus.ACCEPTED).body(oUsuario.get());
+		}
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Inicio Malo");
 	}
 	
 	@PostMapping(value = "/PostCrearPersona",consumes = "application/json")
