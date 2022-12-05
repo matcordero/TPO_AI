@@ -25,6 +25,7 @@ import org.hibernate.annotations.LazyCollectionOption;
 import com.AI.TPO.convert.BooleanConvert;
 import com.AI.TPO.exceptions.UnidadException;
 import com.AI.TPO.views.EdificioView;
+import com.AI.TPO.views.PersonaView;
 import com.AI.TPO.views.TipoPermiso;
 import com.AI.TPO.views.UnidadView;
 import com.fasterxml.jackson.annotation.JsonBackReference;
@@ -181,7 +182,9 @@ public class Unidad {
 
 	public UnidadView toView() {
 		EdificioView auxEdificio = edificio.toView();
-		return new UnidadView(id, piso, numero, habitado, auxEdificio);
+		List<PersonaView> dueniosView = duenios.stream().map(x -> x.toView()).toList();
+		List<PersonaView> inquilinosView = inquilinos.stream().map(x -> x.toView()).toList();
+		return new UnidadView(id, piso, numero, habitado, auxEdificio,dueniosView,inquilinosView);
 	}
 	
 

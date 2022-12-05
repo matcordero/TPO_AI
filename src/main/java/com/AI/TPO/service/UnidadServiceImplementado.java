@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.AI.TPO.entity.Edificio;
+import com.AI.TPO.entity.Persona;
 import com.AI.TPO.entity.Unidad;
 import com.AI.TPO.repository.UnidadRepositorio;
 
@@ -66,4 +67,14 @@ public class UnidadServiceImplementado implements UnidadService{
 		return unidadRepositorio.findByEdificioAndPisoAndNumero(edificio, piso, numero);
 	}
 
+	@Override
+	public List<Unidad> findByDuenio(Persona p) {
+		return unidadRepositorio.findByDuenios(p);
+	}
+
+	@Override
+	public List<Unidad> findByInquilino(Persona p) {
+		return unidadRepositorio.findByInquilinos(p);
+	}
+	
 }

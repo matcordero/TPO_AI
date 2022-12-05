@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import com.AI.TPO.entity.Edificio;
+import com.AI.TPO.entity.Persona;
 import com.AI.TPO.entity.Unidad;
 
 
@@ -24,4 +25,8 @@ public interface UnidadService {
 	public Unidad save(Unidad unidad);
 	
 	public void deleteById(Integer id);
+	
+	public List<Unidad> findByDuenio(Persona p);
+	
+	public List<Unidad> findByInquilino(Persona p);
 }

@@ -36,7 +36,6 @@ public class Usuario {
 	@OneToOne
 	@JoinColumn(name = "documento")
 	@Cascade(CascadeType.ALL)
-	@JsonIgnore
 	private Persona persona;
 	
 	

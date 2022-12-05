@@ -1,6 +1,7 @@
 package com.AI.TPO.entity;
 
 import com.AI.TPO.views.PersonaView;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -23,6 +24,7 @@ public class Persona {
 	
 	@OneToOne(mappedBy = "persona")
 	@Cascade(CascadeType.ALL)
+	@JsonIgnore
 	private Usuario usuario;
 	
 	

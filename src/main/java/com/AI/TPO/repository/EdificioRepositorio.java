@@ -7,5 +7,5 @@ import com.AI.TPO.entity.Edificio;
 
 @Repository
 public interface EdificioRepositorio extends JpaRepository<Edificio, Integer>{
-
+	
 }

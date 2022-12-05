@@ -6,6 +6,7 @@ import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -146,6 +147,35 @@ public class ControladorRest {
 	
 	
 	//Edificio
+	@CrossOrigin
+	@GetMapping(value = "/GetEdificioByID/{id}")
+	public ResponseEntity<?> getEdificioByID(@PathVariable Integer id){
+		Optional<Edificio> oEdificio = edificioService.findById(id);
+		if(oEdificio.isPresent()) {
+			List<Edificio> edificios= new ArrayList<>();
+			edificios.add(oEdificio.get());
+			return ResponseEntity.status(HttpStatus.OK).body(edificios);
+		}
+		return ResponseEntity.notFound().build();
+	}
+	
+	@CrossOrigin
+	@GetMapping(value = "/GetEdificiosByUsuario/{dni}")
+	public ResponseEntity<?> getEdificioByID(@PathVariable String dni){
+		Optional<Persona> oPersona = personaService.findById(dni);
+		if(oPersona.isPresent()) {
+			Persona persona = oPersona.get();
+			List<EdificioView> edificios = new ArrayList<>();
+			List<Unidad> unidadDuenios = unidadService.findByDuenio(persona);
+			List<Unidad> unidadInquilino = unidadService.findByInquilino(persona);
+			edificios.addAll(unidadDuenios.stream().map(x -> x.getEdificio().toView()).toList());
+			edificios.addAll(unidadInquilino.stream().map(x -> x.getEdificio().toView()).toList());
+			Set<EdificioView> setEdificios = new HashSet<>(edificios);
+			return ResponseEntity.status(HttpStatus.OK).body(setEdificios);
+		}
+		return ResponseEntity.notFound().build();
+	}
+	
 	@GetMapping(value = "/GetAllEdificios")
 	public ResponseEntity<?> getAllEdificios(@RequestParam("usuarioEmpleado") String usuarioEmpleado,@RequestParam("contraseñaEmpleado") String contraseñaEmpleado){
 		Validacion estado = usuarioTieneAcceso(usuarioEmpleado,contraseñaEmpleado,TipoPermiso.administrador,TipoPermiso.gestionEdificios);
@@ -235,6 +265,8 @@ public class ControladorRest {
 		registroService.save(new Registro("Creo el edificion " + nombre,estado.getUsuario(),LocalDate.now()));
 		return ResponseEntity.status(HttpStatus.OK).body(edificioService.save(new Edificio(nombre,direccion)));
 	}
+	
+	
 	//------------------------------------------------------------------------
 	//Unidad
 	@PostMapping(value = "/PostCrearUnidad")
@@ -249,6 +281,26 @@ public class ControladorRest {
 			return ResponseEntity.status(HttpStatus.OK).body(unidadService.save(new Unidad(piso,numero,oEdificio.get())));
 		}
 		return ResponseEntity.notFound().build();
+	}
+	@CrossOrigin
+	@GetMapping(value = "/GetUnidadByDuenios/{id}")
+	public ResponseEntity<?> getUnidadByDuenios(@PathVariable String id){
+		Optional<Persona> oPersona = personaService.findById(id);
+		if(oPersona.isPresent()) {
+			Persona persona = oPersona.get();
+			return ResponseEntity.status(HttpStatus.OK).body(unidadService.findByDuenio(persona));
+		}
+		return ResponseEntity.badRequest().build();
+	}
+	@CrossOrigin
+	@GetMapping(value = "/GetUnidadByInquilino/{id}")
+	public ResponseEntity<?> getUnidadByInquilino(@PathVariable String id){
+		Optional<Persona> oPersona = personaService.findById(id);
+		if(oPersona.isPresent()) {
+			Persona persona = oPersona.get();
+			return ResponseEntity.status(HttpStatus.OK).body(unidadService.findByInquilino(persona));
+		}
+		return ResponseEntity.badRequest().build();
 	}
 	
 	
@@ -352,7 +404,6 @@ public class ControladorRest {
 						u.alquilar(persona);
 						unidadService.save(u);
 					} catch (UnidadException e) {
-						// TODO Auto-generated catch block
 						return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
 					}
 				}
@@ -422,7 +473,6 @@ public class ControladorRest {
 				try {
 					u.habitar();
 				} catch (UnidadException e) {
-					// TODO Auto-generated catch block
 					return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
 				}
 				unidadService.save(u);
@@ -432,6 +482,20 @@ public class ControladorRest {
 		}
 		return ResponseEntity.notFound().build();
 	}
+	@CrossOrigin
+	@GetMapping(value = "/GetUnidadByID/{id}")
+	public ResponseEntity<?> getUnidadByID(@PathVariable Integer id){
+		Optional<Unidad> oUnidad = unidadService.findById(id);
+		if(oUnidad.isPresent()) {
+			List<UnidadView> unidades= new ArrayList<>();
+			unidades.add(oUnidad.get().toView());
+			return ResponseEntity.status(HttpStatus.OK).body(unidades);
+		}
+		
+		return ResponseEntity.notFound().build();
+	}
+	
+	
 	//---------------------------------------------------------
 	//Persona
 	@GetMapping(value = "/GetBuscarPersona/{documento}")
@@ -455,12 +519,14 @@ public class ControladorRest {
 		if(oUsuario.isPresent() && oUsuario.get().getContraseña().equals(contraseñaEmpleado)) {
 			return ResponseEntity.status(HttpStatus.ACCEPTED).body(oUsuario.get());
 		}
-		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Inicio Malo");
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
 	}
 	
-	@PostMapping(value = "/PostCrearPersona",consumes = "application/json")
+	@PostMapping(value = "/PostCrearPersona")
 	public ResponseEntity<?> postCrearPersona(@RequestParam("documento") String documento,@RequestParam("nombre") String nombre,@RequestParam("usuarioEmpleado") String usuarioEmpleado,@RequestParam("contraseñaEmpleado") String contraseñaEmpleado){
 		Validacion estado = usuarioTieneAcceso(usuarioEmpleado,contraseñaEmpleado,TipoPermiso.administrador,TipoPermiso.gestionPersonas);
+		System.out.println(usuarioEmpleado);
+		System.out.println(contraseñaEmpleado);
 		if (!estado.getMensaje().equals("Ok")){
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(estado.getMensaje());
 		}
@@ -564,7 +630,8 @@ public class ControladorRest {
 	
 	//-----------------------------------------------------------
 	//Reclamo
-	@GetMapping(value = "/GetReclamosByEdificio/{codigo}")
+	@CrossOrigin
+	@PostMapping(value = "/ReclamosByEdificio/{codigo}")
 	public ResponseEntity<?> getReclamosByEdificio(@PathVariable Integer codigo,@RequestParam("usuarioEmpleado") String usuarioEmpleado,@RequestParam("contraseñaEmpleado") String contraseñaEmpleado){
 		Validacion estado = usuarioTieneAcceso(usuarioEmpleado,contraseñaEmpleado,TipoPermiso.administrador,TipoPermiso.gestionReclamos,TipoPermiso.habitante);
 		if (!estado.getMensaje().equals("Ok")){
@@ -596,56 +663,37 @@ public class ControladorRest {
 		return ResponseEntity.status(HttpStatus.OK).body(Reclamos);
 	}
 	
-	@GetMapping(value = "/GetReclamosByUnidad/{codigo}/{piso}/{numero}")
-	public ResponseEntity<?> getReclamosByUnidad(@PathVariable Integer codigo,@PathVariable String piso,@PathVariable String numero,@RequestParam("usuarioEmpleado") String usuarioEmpleado,@RequestParam("contraseñaEmpleado") String contraseñaEmpleado){
+	@PostMapping(value = "/GetReclamosByUnidad/{id}")
+	public ResponseEntity<?> getReclamosByUnidad(@PathVariable Integer id,@RequestParam("usuarioEmpleado") String usuarioEmpleado,@RequestParam("contraseñaEmpleado") String contraseñaEmpleado){
 		Validacion estado = usuarioTieneAcceso(usuarioEmpleado,contraseñaEmpleado,TipoPermiso.administrador,TipoPermiso.gestionReclamos,TipoPermiso.habitante);
 		if (!estado.getMensaje().equals("Ok")){
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(estado.getMensaje());
 		}
-		Optional<Edificio> oEdificio = edificioService.findById(codigo);
-		if(oEdificio.isPresent()) {
-			Edificio edificio = oEdificio.get();
-			List<Unidad> unidades = unidadService.findByEdificioAndPisoAndNumero(edificio, piso, numero);
-			List<Reclamo> reclamos = new ArrayList<>();
-			for(Unidad u: unidades) {
-				if(estado.getUsuario().tieneSoloEstePermiso(TipoPermiso.habitante)) {
-					if(u.getInquilinos().size()>0) {
-						if(!u.tenesInquilino(estado.getUsuario().getPersona())) {
-							return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("No sos Inquilino de esta unidad");
-						}
-					}
-					else {
-						if(!u.tenesDuenio(estado.getUsuario().getPersona())) {
-							return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("No sos Duenio de esta unidad");
-						}
-					}
-				}
-				List<Reclamo> reclamosDeUnidad = reclamoService.findByEdificio(edificio);
-				reclamos.addAll(reclamosDeUnidad);
-			}
-			registroService.save(new Registro("Solicito los reclamos de la unidad " + numero,estado.getUsuario(),LocalDate.now()));
+		
+		Optional<Unidad> oUnidad = unidadService.findById(id);
+		if(oUnidad.isPresent()) {
+			Unidad unidad = oUnidad.get();
+			List<Reclamo> reclamos = reclamoService.findByUnidad(unidad);
+			registroService.save(new Registro("Solicito los reclamos de la unidad " + id,estado.getUsuario(),LocalDate.now()));
 			return ResponseEntity.status(HttpStatus.OK).body(reclamos);
 		}
-		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("El Edificio no existe");
+		return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body("La Unidad no existe");
 	}
 	
 	@GetMapping(value = "/GetReclamo/{numero}")
-	public ResponseEntity<?> getReclamo(@PathVariable Integer numero,	@RequestParam("usuarioEmpleado") String usuarioEmpleado,@RequestParam("contraseñaEmpleado") String contraseñaEmpleado){
-		Validacion estado = usuarioTieneAcceso(usuarioEmpleado,contraseñaEmpleado,TipoPermiso.administrador,TipoPermiso.gestionReclamos);
-				if (!estado.getMensaje().equals("Ok")){
-					return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(estado.getMensaje());
-				}
-		registroService.save(new Registro("",estado.getUsuario(),LocalDate.now()));
+	public ResponseEntity<?> getReclamo(@PathVariable Integer numero){
 		Optional<Reclamo> oReclamo = reclamoService.findById(numero);
 		if(oReclamo.isPresent()) {
 			Reclamo reclamo = oReclamo.get();
-			registroService.save(new Registro("Solicito el reclamo " + numero,estado.getUsuario(),LocalDate.now()));
-			return ResponseEntity.status(HttpStatus.OK).body(reclamo);
+			registroService.save(new Registro("Solicito el reclamo " + numero,reclamo.getUsuario().getUsuario(),LocalDate.now()));
+			List<Reclamo> reclamos = new ArrayList<>();
+			reclamos.add(reclamo);
+			return ResponseEntity.status(HttpStatus.OK).body(reclamos);
 		}
 		return ResponseEntity.notFound().build();
 	}
 	
-	@GetMapping(value = "/GetReclamosByPersona/{documento}")
+	@PostMapping(value = "/GetReclamosByPersona/{documento}")
 	public ResponseEntity<?> getReclamosByPersona(@PathVariable String documento,@RequestParam("usuarioEmpleado") String usuarioEmpleado,@RequestParam("contraseñaEmpleado") String contraseñaEmpleado){
 		Validacion estado = usuarioTieneAcceso(usuarioEmpleado,contraseñaEmpleado,TipoPermiso.administrador,TipoPermiso.gestionReclamos,TipoPermiso.habitante);
 		if (!estado.getMensaje().equals("Ok")){
@@ -706,6 +754,40 @@ public class ControladorRest {
 		}
 		return ResponseEntity.notFound().build();
 	}
+	@CrossOrigin
+	@PostMapping(value = "/PostAgregarReclamoUnidadById")
+	public ResponseEntity<?> postAgregarReclamoUnidad(@RequestParam("id") Integer id, @RequestParam("documento") String documento,@RequestParam("ubicacion") String ubicacion,@RequestParam("descripcion") String descripcion,@RequestParam("usuarioEmpleado") String usuarioEmpleado,@RequestParam("contraseñaEmpleado") String contraseñaEmpleado){
+		Validacion estado = usuarioTieneAcceso(usuarioEmpleado,contraseñaEmpleado,TipoPermiso.administrador,TipoPermiso.gestionReclamos,TipoPermiso.habitante);
+		if (!estado.getMensaje().equals("Ok")){
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(estado.getMensaje());
+		}
+		Optional<Persona> oPersona = personaService.findById(documento);
+		if(oPersona.isPresent()) {
+			Persona persona = oPersona.get();
+			Unidad unidad = unidadService.findById(id).get();
+			if(estado.getUsuario().tieneSoloEstePermiso(TipoPermiso.habitante)) {
+				if(unidad.getInquilinos().size()>0) {
+					if(!unidad.tenesInquilino(estado.getUsuario().getPersona())) {
+						System.err.println("aca 1");
+						return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("No sos Inquilino de esta unidad");
+					}
+				}
+				else {
+					if(!unidad.tenesDuenio(estado.getUsuario().getPersona())) {
+						System.err.println("aca 2");
+						return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("No sos Duenio de esta unidad");
+					}
+				}
+			}
+			Reclamo reclamo = new Reclamo(persona, unidad.getEdificio(), ubicacion, descripcion, unidad);
+			reclamoService.save(reclamo);
+			registroService.save(new Registro("Agrego un reclamo a la unidad " + id,estado.getUsuario(),LocalDate.now()));
+			System.err.println("aca 3");
+			return ResponseEntity.status(HttpStatus.OK).body(reclamo);
+		}
+		return ResponseEntity.notFound().build();
+	}
+	
 	
 	@PostMapping(value = "/PostAgregarReclamoEdificio")
 	public ResponseEntity<?> postAgregarReclamoEdificio(@RequestParam("codigo") Integer codigo, @RequestParam("documento") String documento,
@@ -725,7 +807,9 @@ public class ControladorRest {
 				}
 			}
 			Reclamo reclamo = new Reclamo(persona, edificio, ubicacion, descripcion);
+			System.out.print("aca2");
 			registroService.save(new Registro("Agrego un reclamo al edificio " + codigo,estado.getUsuario(),LocalDate.now()));
+			System.out.print("aca");
 			return ResponseEntity.status(HttpStatus.OK).body(reclamoService.save(reclamo));
 		}
 		return ResponseEntity.notFound().build();

@@ -1,5 +1,7 @@
 package com.AI.TPO.views;
 
+import java.util.List;
+
 public class UnidadView {
 
 	private int id;
@@ -7,15 +9,37 @@ public class UnidadView {
 	private String numero;
 	private boolean habitado;
 	private EdificioView edificio;
+	private List<PersonaView> duenios;
+	private List<PersonaView> inquilinos;
 	
 	public UnidadView() {}
 
-	public UnidadView(int id, String piso, String numero, boolean habitado, EdificioView edificio) {
+	public UnidadView(int id, String piso, String numero, boolean habitado, EdificioView edificio, List<PersonaView> duenios,List<PersonaView> inquilinos ) {
 		this.id = id;
 		this.piso = piso;
 		this.numero = numero;
 		this.habitado = habitado;
 		this.edificio = edificio;
+		this.duenios = duenios;
+		this.inquilinos = inquilinos;
+	}
+	
+	
+
+	public List<PersonaView> getDuenios() {
+		return duenios;
+	}
+
+	public void setDuenios(List<PersonaView> duenios) {
+		this.duenios = duenios;
+	}
+
+	public List<PersonaView> getInquilinos() {
+		return inquilinos;
+	}
+
+	public void setInquilinos(List<PersonaView> inquilinos) {
+		this.inquilinos = inquilinos;
 	}
 
 	public int getId() {
