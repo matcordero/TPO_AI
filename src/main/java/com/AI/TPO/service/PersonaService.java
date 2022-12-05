@@ -11,7 +11,7 @@ import com.AI.TPO.entity.Persona;
 
 public interface PersonaService {
 
-	public Iterable<Persona> findAll();
+	public List<Persona> findAll();
 	
 	public Page<Persona> findAll(Pageable pageable);
 	

@@ -42,6 +42,7 @@ import com.AI.TPO.entity.Unidad;
 import com.AI.TPO.entity.Usuario;
 import com.AI.TPO.exceptions.EdificioException;
 import com.AI.TPO.exceptions.UnidadException;
+import com.AI.TPO.service.CloudinaryService;
 import com.AI.TPO.service.EdificioService;
 import com.AI.TPO.service.ImagenService;
 import com.AI.TPO.service.PermisoService;
@@ -56,6 +57,7 @@ import com.AI.TPO.views.PersonaView;
 import com.AI.TPO.views.ReclamoView;
 import com.AI.TPO.views.TipoPermiso;
 import com.AI.TPO.views.UnidadView;
+
 
 @CrossOrigin
 @RestController
@@ -81,7 +83,8 @@ public class ControladorRest {
 	private PermisoService permisoService;
 	@Autowired
 	private RegistroService registroService;
-	
+	@Autowired
+	private CloudinaryService cloudinaryService;
 	//verificacion
 	private class Validacion{
 		public String mensaje;
@@ -176,7 +179,7 @@ public class ControladorRest {
 		return ResponseEntity.notFound().build();
 	}
 	
-	@GetMapping(value = "/GetAllEdificios")
+	@PostMapping(value = "/GetAllEdificios")
 	public ResponseEntity<?> getAllEdificios(@RequestParam("usuarioEmpleado") String usuarioEmpleado,@RequestParam("contraseñaEmpleado") String contraseñaEmpleado){
 		Validacion estado = usuarioTieneAcceso(usuarioEmpleado,contraseñaEmpleado,TipoPermiso.administrador,TipoPermiso.gestionEdificios);
 		if (!estado.getMensaje().equals("Ok")){
@@ -269,6 +272,7 @@ public class ControladorRest {
 	
 	//------------------------------------------------------------------------
 	//Unidad
+	@CrossOrigin
 	@PostMapping(value = "/PostCrearUnidad")
 	public ResponseEntity<?> postCrearUnidad(@RequestParam("piso") String piso,@RequestParam("numero") String numero,@RequestParam("codigo") Integer codigo,@RequestParam("usuarioEmpleado") String usuarioEmpleado,@RequestParam("contraseñaEmpleado") String contraseñaEmpleado){
 		Validacion estado = usuarioTieneAcceso(usuarioEmpleado,contraseñaEmpleado,TipoPermiso.administrador,TipoPermiso.gestionEdificios);
@@ -292,6 +296,12 @@ public class ControladorRest {
 		}
 		return ResponseEntity.badRequest().build();
 	}
+	@CrossOrigin
+	@GetMapping(value = "/GetAllUnidades")
+	public ResponseEntity<?> getAllUnidades(){
+		return ResponseEntity.status(HttpStatus.OK).body(unidadService.findAll());
+	}
+	
 	@CrossOrigin
 	@GetMapping(value = "/GetUnidadByInquilino/{id}")
 	public ResponseEntity<?> getUnidadByInquilino(@PathVariable String id){
@@ -458,7 +468,7 @@ public class ControladorRest {
 		}
 		return ResponseEntity.notFound().build();
 	}
-	
+	@CrossOrigin
 	@PutMapping(value = "/PutHabitarUnidad/{codigoEdificio}/{piso}/{numero}")
 	public ResponseEntity<?> putHabitarUnidad(@PathVariable Integer codigoEdificio,@PathVariable String piso,
 			@PathVariable String numero, @RequestParam("usuarioEmpleado") String usuarioEmpleado,@RequestParam("contraseñaEmpleado") String contraseñaEmpleado){
@@ -498,6 +508,15 @@ public class ControladorRest {
 	
 	//---------------------------------------------------------
 	//Persona
+	@GetMapping(value = "/GetAllPersona")
+	public ResponseEntity<?> getAllPersonas(){
+		return ResponseEntity.status(HttpStatus.OK).body(personaService.findAll());
+	}
+	@GetMapping(value = "/GetAllUsuarios")
+	public ResponseEntity<?> getAllUsuarios(){
+		return ResponseEntity.status(HttpStatus.OK).body(usuarioService.findAll());
+	}
+	
 	@GetMapping(value = "/GetBuscarPersona/{documento}")
 	public ResponseEntity<?> read(@PathVariable String documento,@RequestParam("usuarioEmpleado") String usuarioEmpleado,@RequestParam("contraseñaEmpleado") String contraseñaEmpleado){
 		Validacion estado = usuarioTieneAcceso(usuarioEmpleado,contraseñaEmpleado,TipoPermiso.administrador,TipoPermiso.gestionPersonas);
@@ -845,6 +864,27 @@ public class ControladorRest {
 		}
 		return ResponseEntity.notFound().build();
 	}*/
+	
+	@PostMapping(value ="/CargarImagen")
+	public ResponseEntity<?> cargarImagen(@RequestParam("usuarioEmpleado") String usuarioEmpleado,@RequestParam("contraseñaEmpleado") String contraseñaEmpleado,@RequestParam("id") Integer id,@RequestParam MultipartFile multipartFile) throws IOException{
+		Validacion estado = usuarioTieneAcceso(usuarioEmpleado,contraseñaEmpleado,TipoPermiso.administrador,TipoPermiso.gestionReclamos,TipoPermiso.habitante);
+		if (!estado.getMensaje().equals("Ok")){
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(estado.getMensaje());
+		}
+		Optional<Reclamo> oReclamo = reclamoService.findById(id); 
+		if(oReclamo.isPresent()) {
+			Reclamo reclamo = oReclamo.get();
+			if(reclamo.getEstado().equals(Estado.terminado) || reclamo.getEstado().equals(Estado.desestimado) || reclamo.getEstado().equals(Estado.anulado)) {
+				return ResponseEntity.badRequest().build();
+			}
+			Map result = cloudinaryService.upload(multipartFile);
+			Imagen imagen = new Imagen(result.get("url").toString(),"imagen",reclamo);
+			registroService.save(new Registro("Grabo una imagen en el reclamo" + id,estado.getUsuario(),LocalDate.now()));
+			return ResponseEntity.status(HttpStatus.OK).body(imagenService.save(imagen));
+		}
+		return ResponseEntity.notFound().build();
+	}
+	
 	
 	@PostMapping("/PostAgregarImagen/upload")
 	public ResponseEntity<?> upload (@RequestParam("File") MultipartFile imagen, @RequestParam("numero") Integer numero,

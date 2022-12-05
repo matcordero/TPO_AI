@@ -20,7 +20,7 @@ public class PersonaServiceImplementado implements PersonaService{
 	
 	@Override
 	@Transactional(readOnly = true)
-	public Iterable<Persona> findAll() {
+	public List<Persona> findAll() {
 		return personaRepositorio.findAll();
 	}
 
